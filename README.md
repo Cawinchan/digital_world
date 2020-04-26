@@ -56,7 +56,7 @@ When you shoot a bubble, it bursts and **split into two**! So watch out!!
 We found some information of these bubbles, when shot they will always
 split half their size and move **diagonally downwards**! 
 
-These bubbles are crafty buggers, they found way to bounce across all surfaces
+These bubbles are crafty buggers, they found a way to bounce across all surfaces
 just to get you! 
 
 We will **reward** you for each bubble you burst, 
@@ -72,7 +72,7 @@ Small :  $5   , $15   and $25
 XSmall:  $10  , $20   and $50
 ```
 
-Money is worthless if you are dead, but at least you can die richer! 
+Money is worthless if you are dead, but you can always die richer than others! 
 Try to stay alive for as long enough to see how much you can earn!  
 
 ##### Built With
