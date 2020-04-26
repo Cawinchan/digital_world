@@ -6,7 +6,7 @@ from kivy.clock import Clock
 from kivy.core.text import Label as Corelabel
 from kivy.config import Config
 import random
-from libdw import sm
+
 
 class gamewidget(Widget):
 
