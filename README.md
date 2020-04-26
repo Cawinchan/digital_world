@@ -111,7 +111,7 @@ However! You will get **tired**! So you will only be able to use it **every 1 se
 
 
 
-##### Health
+#### Health
 
 You will have **three lives** displayed by the audio bar on the top right 
 
@@ -119,7 +119,7 @@ You will have **three lives** displayed by the audio bar on the top right
 
 
 
-##### Display
+#### Display
 
 
 
