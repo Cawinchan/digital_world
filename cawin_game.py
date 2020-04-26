@@ -12,13 +12,14 @@ class gamewidget(Widget):
 
     def __init__(self):
         super().__init__()
+        #Keyboard controls
         self._keyboard = Window.request_keyboard(self.on_keyboard, self)
         self._keyboard.bind(on_key_down=self.on_keyboard_down)
         self._keyboard.bind(on_key_up=self.on_keyboard_up)
-
+        #Frame tracker
         self.register_event_type("on_frame")
-
         Clock.schedule_interval(self._on_frame, 0)
+        #spawn rates
         Clock.schedule_interval(self.spawn_normal_enemies,3)
         Clock.schedule_interval(self.spawn_fast_enemies, 20)
         Clock.schedule_interval(self.spawn_thick_enemies, 15)
@@ -26,19 +27,18 @@ class gamewidget(Widget):
         self.keysPressed = set()
         self._entities = set()
 
-        self._score_board = Corelabel(text='Score: 0',font_size=30)
+        #Decoration for score and health tracking
+        self._score_board = Corelabel(text='Reward: $0',font_size=30)
         self._score_board.refresh()
         self._score = 0
 
         self._health_board = Corelabel(text='Health =>',font_size=30)
         self._health_board.refresh()
 
-
         with self.canvas:
             self._score_instruction = Rectangle(texture=self._score_board.texture,pos=(0,Window.height - 50),size=self._score_board.size)
             self._health_instruction = Rectangle(texture=self._health_board.texture, pos=(Window.width-185, Window.height - 55),
                                                 size=self._health_board.size)
-
     @property
     def score(self):
         return self._score
@@ -46,7 +46,7 @@ class gamewidget(Widget):
     @score.setter
     def score(self,value):
         self._score = value
-        self._score_board.text = 'Score: ' + str(value)
+        self._score_board.text = 'Reward: $' + str(value)
         self._score_board.refresh()
         self._score_instruction.texture = self._score_board.texture
         self._score_instruction.size = self._score_board.size
@@ -72,7 +72,7 @@ class gamewidget(Widget):
         y = Window.height - 50
         random_speed = random.randint(400, 500)
         random_left_or_right = random.randint(0, 1)
-        size = (((Window.width-150) * (Window.height-150)))**(1/3)*3
+        size = (((Window.width-150) * (Window.height-150)))**(1/3)*2.5
         self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right))
 
     def spawn_fast_enemies(self, dt):
@@ -189,6 +189,27 @@ class Healthicon(Entity):
             game.remove_entity(self)
             game.add_entity(Healthicon(source="tools/theming/defaulttheme/audio-volume-muted.png"))
 
+class Dashicon(Entity):
+    def __init__(self, pos):
+        super().__init__()
+        self.pos = pos
+        self.source = 'tools/theming/defaulttheme/tab_btn_disabled.png'
+        self.size = (15,25)
+        game.bind(on_frame=self.move)
+
+    def stop_callbacks(self):
+        game.unbind(on_frame=self.move)
+
+    def move(self, sender, dt):
+        # Keeps track of state of dash for user
+        if game.player.dash_num <= 0:
+            self.stop_callbacks()
+            game.remove_entity(self)
+
+        #movement of dash icon
+        dashicon_y_position = self.pos[1]
+        dashicon_x_position = game.player.pos[0] - 30
+        self.pos = (dashicon_x_position, dashicon_y_position)
 
 class Bulleticon(Entity):
     def __init__(self,pos,number):
@@ -203,13 +224,14 @@ class Bulleticon(Entity):
         game.unbind(on_frame=self.move)
 
     def move(self, sender, dt):
+        #Keeps track of state of bullets for user
         if game.player.bullet_num == 1 and self.number == 1:
             self.stop_callbacks()
             game.remove_entity(self)
         if game.player.bullet_num == 0 and self.number == 0:
             self.stop_callbacks()
             game.remove_entity(self)
-
+        # Remove icon when player is dead
         if game.player.health <= 0:
             self.stop_callbacks()
             game.remove_entity(self)
@@ -312,7 +334,7 @@ class Explosion(Entity):
         game.remove_entity(self)
 
 class Enemy(Entity):
-    bubble_size = (((Window.width-150) * (Window.height-150)))**(1/3)*3
+    bubble_size = (((Window.width-150) * (Window.height-150)))**(1/3)*2.5
     bubble_size_small = (((Window.width-150) * (Window.height-150)))**(1/3)
     bubble_size_big = (((Window.width-150) * (Window.height-150)))**(1/3)*5
     speed = 100
@@ -340,7 +362,7 @@ class Enemy(Entity):
     def move(self, sender, dt):
         self.lst.append(self.pos[0])
         # bounce if hit the bottom
-        if self.pos[1] < 0:
+        if self.pos[1] < 0 and self.pos[0] != game.player.pos[0] and self.pos[1] != game.player.pos[1]:
            self.stop_callbacks()
            game.remove_entity(self)
            if self.left_or_right == 0:
@@ -373,8 +395,9 @@ class Enemy(Entity):
                game.add_entity(Enemy((Window.width-self.size[0],self.pos[1]), self._speed, self.size,left_or_right=0,direction=self.direction,type=self.type    ))
 
         for e in game.colliding_entities(self):
-            if e == game.player:
-                game.add_entity(Explosion((e.pos[0]+10,e.pos[1]+60), (e.size[0] / 2, e.size[1] / 2)))
+            if e == game.player and game.player.invincible_frames != True:
+                #Explosion near the player e.pos is a fixed position and self.pos is
+                game.add_entity(Explosion(((e.pos[0]+self.pos[0])/2,self.pos[1]), (e.size[0] * 2, e.size[1] * 2)))
                 self.stop_callbacks()
                 game.remove_entity(self)
                 game.player.health -= 1
@@ -405,10 +428,13 @@ class Player(Entity):
         self.size = (50,50)
         game.add_entity(Bulleticon((self.pos[0]+60,self.pos[1]+30),0))
         game.add_entity(Bulleticon((self.pos[0]+70,self.pos[1]+30),1))
+        game.add_entity(Dashicon(((self.pos[0]-30,self.pos[1]+30))))
         game.add_entity(Healthicon())
         self.health = 3
         # limit to two bullet in the screen only
         self.bullet_num = 2
+        self.dash_num = 1
+        self.invincible_frames = False
 
 
     def stop_callbacks(self):
@@ -422,8 +448,16 @@ class Player(Entity):
             y = self.pos[1] + 40
             game.add_entity(Bullet((x, y)))
 
-    def move(self, sender, dt):
+    def invincible(self,dt):
+        self.invincible_frames = False
+        self.source = "tools/theming/defaulttheme/textinput_active.png"
+        return
+    def reset_dash(self,dt):
+        self.dash_num = 1
+        game.add_entity(Dashicon(((self.pos[0] - 30, self.pos[1] + 30))))
+        return
 
+    def move(self, sender, dt):
         # move
         frame_rate = 200 * dt
         player_x_position = self.pos[0]
@@ -434,6 +468,25 @@ class Player(Entity):
         if "right" in game.keysPressed and game.player.health > 0:
             if player_x_position < Window.width - 50:
                 player_x_position += frame_rate + 2
+        #Dash mechanic
+        if "v" in game.keysPressed and "left" in game.keysPressed and game.player.dash_num >= 1 and game.player.health > 0:
+            if player_x_position > 0:
+                self.invincible_frames = True
+                self.dash_num -= 1
+                self.source = 'tools/theming/defaulttheme/tab_btn_disabled.png'
+                Clock.schedule_once(self.invincible, 0.3)
+                Clock.schedule_once(self.reset_dash, 1)
+                player_x_position -= frame_rate * 35
+
+        if "v" in game.keysPressed and "right" in game.keysPressed and game.player.dash_num >= 1 and game.player.health > 0:
+            if player_x_position < Window.width - 50:
+                self.invincible_frames = True
+                self.dash_num -= 1
+                self.source = 'tools/theming/defaulttheme/tab_btn_disabled.png'
+                Clock.schedule_once(self.invincible, 0.3)
+                Clock.schedule_once(self.reset_dash, 1)
+                player_x_position += frame_rate * 35
+
         self.pos = (player_x_position, player_y_position)
 
         if self.health <= 0:
@@ -460,7 +513,6 @@ class Player(Entity):
     def stop_game(self, dt):
          gameApp().stop()
 
-
 class gameApp(App):
     def build(self):
         return game
@@ -469,7 +521,5 @@ if __name__ == '__main__':
     game = gamewidget()
     game.player = Player()
     game.add_entity(game.player)
-    Config.set('graphics', 'width', '1000')
-    Config.set('graphics', 'height', '1000')
     Config.write()
     gameApp().run()
