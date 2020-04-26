@@ -70,7 +70,7 @@ class gamewidget(Widget):
     def spawn_normal_enemies(self, dt):
         random_x = random.randint(0, Window.width)
         y = Window.height - 50
-        random_speed = random.randint(400, 500)
+        random_speed = random.randint(150, 200)
         random_left_or_right = random.randint(0, 1)
         size = (((Window.width-150) * (Window.height-150)))**(1/3)*2.5
         self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right))
@@ -78,7 +78,7 @@ class gamewidget(Widget):
     def spawn_fast_enemies(self, dt):
         random_x = random.randint(0, Window.width)
         y = Window.height - 50
-        random_speed = random.randint(800, 1000)
+        random_speed = random.randint(600, 800)
         random_left_or_right = random.randint(0, 1)
         size = (((Window.width-150) * (Window.height-150)))**(1/3)
         self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right,type=1))
@@ -86,7 +86,7 @@ class gamewidget(Widget):
     def spawn_thick_enemies(self, dt):
         random_x = random.randint(0, Window.width)
         y = Window.height - 50
-        random_speed = random.randint(200, 300)
+        random_speed = random.randint(50, 100)
         random_left_or_right = random.randint(0, 1)
         size = (((Window.width-150) * (Window.height-150)))**(1/3)*5
         self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right,type=2))
@@ -132,6 +132,7 @@ class gamewidget(Widget):
 
 class Entity(object):
     def __init__(self):
+        #Placeholders
         self._pos = (0,0)
         self._size = (50,50)
         self._source = 'tools/theming/defaulttheme/checkbox_radio_on.png'
@@ -202,7 +203,7 @@ class Dashicon(Entity):
 
     def move(self, sender, dt):
         # Keeps track of state of dash for user
-        if game.player.dash_num <= 0:
+        if game.player.dash_num <= 0 or game.player.health <= 0:
             self.stop_callbacks()
             game.remove_entity(self)
 
@@ -360,6 +361,9 @@ class Enemy(Entity):
         game.unbind(on_frame=self.move)
 
     def move(self, sender, dt):
+        if game.player.health <= 0:
+            self.stop_callbacks()
+            return
         self.lst.append(self.pos[0])
         # bounce if hit the bottom
         if self.pos[1] < 0 and self.pos[0] != game.player.pos[0] and self.pos[1] != game.player.pos[1]:
@@ -492,11 +496,15 @@ class Player(Entity):
         if self.health <= 0:
             self._game_over_board = Corelabel(text='GAME OVER', font_size=125)
             self._game_over_board_2 = Corelabel(text='Press esc to exit', font_size=100)
-            self._game_over_board_3 = Corelabel(text='Turning off in 5 seconds...', font_size=80)
+            self._game_over_board_3 = Corelabel(text='Turning off in 20 seconds...', font_size=80)
             self._game_over_board.refresh()
             self._game_over_board_2.refresh()
             self._game_over_board_3.refresh()
-            Clock.schedule_once(self.stop_game, 5)
+            Clock.unschedule(game.spawn_normal_enemies)
+            Clock.unschedule(game.spawn_fast_enemies)
+            Clock.unschedule(game.spawn_thick_enemies)
+            Clock.schedule_once(self.stop_game, 20)
+
 
             with game.canvas:
                 self._game_over_instruction = Rectangle(texture=self._game_over_board.texture, pos=((Window.width-self._game_over_board.size[0])/2, (Window.height-self._game_over_board.size[1])/2),
@@ -522,4 +530,6 @@ if __name__ == '__main__':
     game.player = Player()
     game.add_entity(game.player)
     Config.write()
+    Config.set('graphics','width','1000')
+    Config.set('graphics', 'height', '1000')
     gameApp().run()
