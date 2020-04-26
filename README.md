@@ -5,7 +5,16 @@ Try to stay alive for as long as possible, without dying!
 ## Getting Started
 
 ### Prerequisites
+
 Kivy
+
+##### For All:
+
+Please run the **code once**, **press esc** and **run it again**.
+
+For some reason the configurations of the screen only load after the first initial run
+
+
 
 ##### For Windows:
 
@@ -43,6 +52,9 @@ Have not tested on Mac
 **Fire** with spacebar
 
 ### How it works 
+
+#### Enemy
+
 We have three types of enemies.
 
 ```
@@ -53,10 +65,10 @@ Speed:  Normal, Slow  and Fast
 
 When you shoot a bubble, it bursts and **split into two**! So watch out!!
 
-We found some information of these bubbles, when shot they will always
+We have some information of these bubbles, when shot they will always
 split half their size and move **diagonally downwards**! 
 
-These bubbles are crafty buggers, they found way to bounce across all surfaces
+These bubbles are crafty buggers, they found a way to bounce across all surfaces
 just to get you! 
 
 We will **reward** you for each bubble you burst, 
@@ -74,6 +86,44 @@ XSmall:  $10  , $20   and $50
 
 Money is worthless if you are dead, but at least you can die richer! 
 Try to stay alive for as long enough to see how much you can earn!  
+
+#### Bullet
+
+We have a shortage of resources so you have **only two bullets**, 
+
+Once you fired your two shots, you have to 
+
+either wait for your **bullets to leave the screen**,
+
+or       wait for your **bullet to hit an enemy**
+
+***Hint: you can chain your shots by shooting enemies as they come down like a machine gun!* 
+
+#### Dash
+
+We don't have much but we are crafty!!
+
+When you **dash** you are **invincible**! You will **evade all bubbles** when you are dashing! 
+
+
+
+However! You will get **tired**! So you will only be able to use it **every 1 second** to be safe! 
+
+
+
+#### Health
+
+You will have **three lives** displayed by the audio bar on the top right 
+
+
+
+
+
+#### Display
+
+
+
+
 
 ##### Built With
 Only Kivy's default images were used, no external libraries were used to build this game! 
