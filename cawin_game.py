@@ -20,7 +20,15 @@ class gamewidget(Widget):
         self.register_event_type("on_frame")
         Clock.schedule_interval(self._on_frame, 0)
         #spawn rates
-        Clock.schedule_interval(self.spawn_normal_enemies,3)
+        self.spawn_white_count = 0
+        self.spawn_fast_count = 0
+        self.spawn_thick_count = 0
+        self.spawn_total_count = 0
+        self.spawn_white_total = 9
+        self.spawn_fast_total = 2
+        self.spawn_thick_total = 2
+
+        Clock.schedule_interval(self.spawn_normal_enemies, 5)
         Clock.schedule_interval(self.spawn_fast_enemies, 20)
         Clock.schedule_interval(self.spawn_thick_enemies, 15)
 
@@ -68,28 +76,35 @@ class gamewidget(Widget):
             self.canvas.remove(entity._instruction)
 
     def spawn_normal_enemies(self, dt):
-        random_x = random.randint(0, Window.width)
-        y = Window.height - 50
-        random_speed = random.randint(150, 200)
-        random_left_or_right = random.randint(0, 1)
-        size = (((Window.width-150) * (Window.height-150)))**(1/3)*2.5
-        self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right))
+        if self.spawn_white_count <= self.spawn_white_total:
+            random_x = random.randint(0, Window.width)
+            y = Window.height - 50
+            random_speed = random.randint(125, 175)
+            random_left_or_right = random.randint(0, 1)
+            size = (((Window.width-150) * (Window.height-150)))**(1/3)*2.5
+            self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right))
+            self.spawn_white_count += 1
 
     def spawn_fast_enemies(self, dt):
-        random_x = random.randint(0, Window.width)
-        y = Window.height - 50
-        random_speed = random.randint(600, 800)
-        random_left_or_right = random.randint(0, 1)
-        size = (((Window.width-150) * (Window.height-150)))**(1/3)
-        self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right,type=1))
+        if self.spawn_fast_count <= self.spawn_fast_total:
+            random_x = random.randint(0, Window.width)
+            y = Window.height - 50
+            random_speed = random.randint(600, 800)
+            random_left_or_right = random.randint(0, 1)
+            size = (((Window.width-150) * (Window.height-150)))**(1/3)
+            self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right,type=1))
+            self.spawn_fast_count += 1
+
 
     def spawn_thick_enemies(self, dt):
-        random_x = random.randint(0, Window.width)
-        y = Window.height - 50
-        random_speed = random.randint(50, 100)
-        random_left_or_right = random.randint(0, 1)
-        size = (((Window.width-150) * (Window.height-150)))**(1/3)*5
-        self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right,type=2))
+        if self.spawn_thick_count <= self.spawn_thick_total:
+            random_x = random.randint(0, Window.width)
+            y = Window.height - 50
+            random_speed = random.randint(25, 50)
+            random_left_or_right = random.randint(0, 1)
+            size = (((Window.width-150) * (Window.height-150)))**(1/3)*5
+            self.add_entity(Enemy((random_x, y), random_speed,(size,size),left_or_right=random_left_or_right,type=2))
+            self.spawn_thick_count += 1
 
     def collides(self, entitiy1, entitiy2):
         #Finds the middle of each box
@@ -203,7 +218,7 @@ class Dashicon(Entity):
 
     def move(self, sender, dt):
         # Keeps track of state of dash for user
-        if game.player.dash_num <= 0 or game.player.health <= 0:
+        if game.player.dash_num <= 0 or game.player.health <= 0 or game.player.time_up == True:
             self.stop_callbacks()
             game.remove_entity(self)
 
@@ -232,8 +247,8 @@ class Bulleticon(Entity):
         if game.player.bullet_num == 0 and self.number == 0:
             self.stop_callbacks()
             game.remove_entity(self)
-        # Remove icon when player is dead
-        if game.player.health <= 0:
+        # Remove icon when player is dead or game over
+        if game.player.health <= 0 or game.player.time_up == True:
             self.stop_callbacks()
             game.remove_entity(self)
         # move
@@ -260,9 +275,11 @@ class Bullet(Entity):
     def stop_callbacks(self):
         game.unbind(on_frame=self.move)
 
+
     def move(self,sender,dt):
         # Bullet out of screen?
         if self.pos[1] > Window.height:
+            game.unbind(on_frame=self.move)
             self.stop_callbacks()
             game.remove_entity(self)
             # limit to two bullet in the screen only
@@ -282,8 +299,8 @@ class Bullet(Entity):
                 self.stop_callbacks()
                 game.add_entity(Explosion(e.pos, (e.size[0]/2.5,e.size[1]/2.5)))
                 e.stop_callbacks()
-                #enemy spilts into two
                 game.remove_entity(e)
+                #enemy spilts into two
                 if e.size[0] == e.bubble_size and e.type == 0:
                     game.score += 2
                 if e.size[0] == e.bubble_size/2 and e.type == 0:
@@ -306,9 +323,8 @@ class Bullet(Entity):
                     game.score += 20
 
                 if e.size[0] > e.bubble_size/4:
-                    random_num = random.randint(0,10)
-                    game.add_entity(Enemy((e.pos[0] + 75 + random_num,e.pos[1]), e._speed+50,(e.size[0]/2,e.size[1]/2),left_or_right=1,type=e.type))
-                    game.add_entity(Enemy((e.pos[0] - 75 - random_num,e.pos[1]), e._speed+50, (e.size[0]/2, e.size[1]/2),left_or_right=0,type=e.type))
+                    game.add_entity(Enemy((e.pos[0] + 75,e.pos[1]), e._speed+50,(e.size[0]/2,e.size[1]/2),left_or_right=1,type=e.type))
+                    game.add_entity(Enemy((e.pos[0] - 75,e.pos[1]), e._speed+50, (e.size[0]/2, e.size[1]/2),left_or_right=0,type=e.type))
                 #limit to two bullet in the screen only
                 if game.player.bullet_num == 1:
                     game.player.bullet_num = 2
@@ -339,6 +355,7 @@ class Enemy(Entity):
     bubble_size_small = (((Window.width-150) * (Window.height-150)))**(1/3)
     bubble_size_big = (((Window.width-150) * (Window.height-150)))**(1/3)*5
     speed = 100
+
     def __init__(self,pos,speed=speed,size=(bubble_size, bubble_size),left_or_right=random.randint(0,1),direction=0,type=0):
         super().__init__()
         self._speed = speed
@@ -353,7 +370,6 @@ class Enemy(Entity):
             self.source = 'tools/theming/defaulttheme/spinner_pressed.png'
         if self.type == 2:
             self.source = 'tools/theming/defaulttheme/tab_btn_pressed.png'
-
         game.bind(on_frame=self.move)
         self.lst = []
 
@@ -362,12 +378,18 @@ class Enemy(Entity):
 
     def move(self, sender, dt):
         if game.player.health <= 0:
+            game.unbind(on_frame=self.move)
             self.stop_callbacks()
             return
+        if game.player.time_up == True:
+            self.stop_callbacks()
+            game.unbind(on_frame=self.move)
+            game.remove_entity(self)
         self.lst.append(self.pos[0])
         # bounce if hit the bottom
         if self.pos[1] < 0 and self.pos[0] != game.player.pos[0] and self.pos[1] != game.player.pos[1]:
            self.stop_callbacks()
+           game.unbind(on_frame=self.move)
            game.remove_entity(self)
            if self.left_or_right == 0:
                game.add_entity(Enemy((self.pos[0],abs(self.pos[1])), self._speed,self.size,left_or_right=0,direction=1,type=self.type))
@@ -376,6 +398,7 @@ class Enemy(Entity):
         # Bounce if hit top
         if self.pos[1] > Window.height-self.size[0]:
            self.stop_callbacks()
+           game.unbind(on_frame=self.move)
            game.remove_entity(self)
            if self.left_or_right == 0:
                game.add_entity(Enemy((self.pos[0],Window.height-self.size[0]), self._speed,self.size,left_or_right=0,direction=0,type=self.type))
@@ -384,6 +407,7 @@ class Enemy(Entity):
         # Bounce if hit left
         if self.pos[0] < 0:
             self.stop_callbacks()
+            game.unbind(on_frame=self.move)
             game.remove_entity(self)
             if self.left_or_right == 0:
                game.add_entity(Enemy((abs(self.pos[0]),self.pos[1]), self._speed,self.size,left_or_right=1,direction=self.direction,type=self.type))
@@ -392,16 +416,17 @@ class Enemy(Entity):
         # Bounce if hit right
         if self.pos[0] > Window.width-self.size[0]:
             self.stop_callbacks()
+            game.unbind(on_frame=self.move)
             game.remove_entity(self)
             if self.left_or_right == 0:
                game.add_entity(Enemy((Window.width-self.size[0],self.pos[1]), self._speed,self.size,left_or_right=1,direction=self.direction,type=self.type))
             if self.left_or_right == 1:
                game.add_entity(Enemy((Window.width-self.size[0],self.pos[1]), self._speed, self.size,left_or_right=0,direction=self.direction,type=self.type    ))
-
         for e in game.colliding_entities(self):
             if e == game.player and game.player.invincible_frames != True:
                 #Explosion near the player e.pos is a fixed position and self.pos is
                 game.add_entity(Explosion(((e.pos[0]+self.pos[0])/2,self.pos[1]), (e.size[0] * 2, e.size[1] * 2)))
+                game.unbind(on_frame=self.move)
                 self.stop_callbacks()
                 game.remove_entity(self)
                 game.player.health -= 1
@@ -427,7 +452,8 @@ class Player(Entity):
         super().__init__()
         self.source = "tools/theming/defaulttheme/textinput_active.png"
         game.bind(on_frame=self.move)
-        self._shoot_event = Clock.schedule_interval(self.shoot_step, 0.1)
+        self._shoot_event = Clock.schedule_interval(self.shoot_step, 0.10)
+        self.shot = False
         self.pos = (400, 0)
         self.size = (50,50)
         game.add_entity(Bulleticon((self.pos[0]+60,self.pos[1]+30),0))
@@ -439,6 +465,8 @@ class Player(Entity):
         self.bullet_num = 2
         self.dash_num = 1
         self.invincible_frames = False
+        self.max_enemy = 10
+        self.time_up = False
 
 
     def stop_callbacks(self):
@@ -447,9 +475,12 @@ class Player(Entity):
 
     def shoot_step(self, dt):
         # shoot
-        if "spacebar" in game.keysPressed and game.player.bullet_num > 0 and game.player.health > 0:
+        #Attempt to prevent people from holding the spacebar
+        self.shot = True
+        if "spacebar" in game.keysPressed and self.bullet_num > 0 and self.health > 0 and self.shot == True and self.time_up == False:
             x = self.pos[0] + 20
             y = self.pos[1] + 40
+            self.shot = False
             game.add_entity(Bullet((x, y)))
 
     def invincible(self,dt):
@@ -457,23 +488,26 @@ class Player(Entity):
         self.source = "tools/theming/defaulttheme/textinput_active.png"
         return
     def reset_dash(self,dt):
-        self.dash_num = 1
+        self.dash_num += 1
         game.add_entity(Dashicon(((self.pos[0] - 30, self.pos[1] + 30))))
         return
+
+    def time_over(self,dt):
+        self.time_up = True
 
     def move(self, sender, dt):
         # move
         frame_rate = 200 * dt
         player_x_position = self.pos[0]
         player_y_position = self.pos[1]
-        if "left" in game.keysPressed and game.player.health > 0:
+        if "left" in game.keysPressed and game.player.health > 0 and self.time_up == False:
             if player_x_position > 0:
                 player_x_position -= frame_rate + 2
-        if "right" in game.keysPressed and game.player.health > 0:
+        if "right" in game.keysPressed and game.player.health > 0 and self.time_up == False:
             if player_x_position < Window.width - 50:
                 player_x_position += frame_rate + 2
         #Dash mechanic
-        if "v" in game.keysPressed and "left" in game.keysPressed and game.player.dash_num >= 1 and game.player.health > 0:
+        if "v" in game.keysPressed and "left" in game.keysPressed and self.dash_num >= 1 and self.health > 0 and self.time_up == False:
             if player_x_position > 0:
                 self.invincible_frames = True
                 self.dash_num -= 1
@@ -482,7 +516,7 @@ class Player(Entity):
                 Clock.schedule_once(self.reset_dash, 1)
                 player_x_position -= frame_rate * 35
 
-        if "v" in game.keysPressed and "right" in game.keysPressed and game.player.dash_num >= 1 and game.player.health > 0:
+        if "v" in game.keysPressed and "right" in game.keysPressed and self.dash_num >= 1 and self.health > 0 and self.time_up == False:
             if player_x_position < Window.width - 50:
                 self.invincible_frames = True
                 self.dash_num -= 1
@@ -505,7 +539,6 @@ class Player(Entity):
             Clock.unschedule(game.spawn_thick_enemies)
             Clock.schedule_once(self.stop_game, 20)
 
-
             with game.canvas:
                 self._game_over_instruction = Rectangle(texture=self._game_over_board.texture, pos=((Window.width-self._game_over_board.size[0])/2, (Window.height-self._game_over_board.size[1])/2),
                                                     size=self._game_over_board.size)
@@ -513,6 +546,32 @@ class Player(Entity):
                 (Window.width - self._game_over_board_2.size[0]) / 2,
                 (Window.height - self._game_over_board_2.size[1]) / 2 - 100),
                                                         size=self._game_over_board_2.size)
+                self._game_over_3_instruction = Rectangle(texture=self._game_over_board_3.texture, pos=(
+                    (Window.width - self._game_over_board_3.size[0]) / 2,
+                (Window.height - self._game_over_board_3.size[1]) / 2 - 200),
+                                                          size=self._game_over_board_3.size)
+
+        Clock.schedule_once(self.time_over, 65)
+        if self.time_up == True:
+            self._you_win_board = Corelabel(text='You won $' + str(game._score) + '!!', font_size=125)
+            self._game_over_board_2 = Corelabel(text='Press esc to exit', font_size=100)
+            self._game_over_board_3 = Corelabel(text='Turning off in 20 seconds...', font_size=80)
+            self._you_win_board.refresh()
+            self._game_over_board_2.refresh()
+            self._game_over_board_3.refresh()
+            Clock.unschedule(game.spawn_normal_enemies)
+            Clock.unschedule(game.spawn_fast_enemies)
+            Clock.unschedule(game.spawn_thick_enemies)
+            Clock.schedule_once(self.stop_game, 20)
+
+            with game.canvas:
+                self._you_win_instruction = Rectangle(texture=self._you_win_board.texture, pos=(
+                (Window.width - self._you_win_board.size[0]) / 2, (Window.height - self._you_win_board.size[1]) / 2),
+                                                      size=self._you_win_board.size)
+                self._game_over_2_instruction = Rectangle(texture=self._game_over_board_2.texture, pos=(
+                    (Window.width - self._game_over_board_2.size[0]) / 2,
+                    (Window.height - self._game_over_board_2.size[1]) / 2 - 100),
+                                                          size=self._game_over_board_2.size)
                 self._game_over_3_instruction = Rectangle(texture=self._game_over_board_3.texture, pos=(
                     (Window.width - self._game_over_board_3.size[0]) / 2,
                     (Window.height - self._game_over_board_3.size[1]) / 2 - 200),
