@@ -1,0 +1,145 @@
+.include "C:/Users/cawin/Downloads/50002/nominal.jsim"
+.include "C:/Users/cawin/Downloads/50002/lab3checkoff_6.jsim"
+.include "C:/Users/cawin/Downloads/50002/stdcell.jsim"
+
+/*
+* 2-input NAND: inputs are A and B, output is Z
+*NAND GATE
+.subckt nand2 a b z
+MPD1 z a 1 0 NENH sw=8 sl=1
+MPD2 1 b 0 0 NENH sw=8 sl=1
+MPU1 z a vdd vdd PENH sw=10 sl=1
+MPU2 z b vdd vdd PENH sw=10 sl=1
+.ends
+
+*AND GATE
+.subckt AND a b z
+Xnand0 a b c nand2
+Xinv0 c z inv
+.ends
+
+.subckt XOR a b z
+MPD1 z a il 0 NENH sw=8 sl=1
+XinvB b inv_b inv 
+MPD2 z inv_b il 0 NENH sw=8 sl=1
+MPD3 il b 0 0 NENH sw=8 sl=1
+XinvA a inv_a inv
+MPD4 il inv_a 0 0 NENH sw=8 sl=1
+MPU1 j1 a vdd vdd PENH sw=10 sl=1
+MPU2 z inv_b j1 vdd PENH sw=10 sl=1
+MPU3 k1 inv_a vdd vdd PENH sw=10 sl=1
+MPU4 z b k1 vdd PENH sw=10 sl=1
+.ends
+
+* OR: input is A and B, output is F
+.subckt OR a b z
+Xnor0 a b c nor
+Xinv0 c z inv 
+.ends
+
+* NOR: input is A and B, output is F
+.subckt nor a b z
+MPU1 vdd a 1 vdd PENH sw=10 sl=1
+MPU2 1 b z vdd PENH sw=10 sl=1
+MPD1 0 b z 0 NENH sw=8 sl=1
+MPD2 0 a z 0 NENH sw=8 sl=1
+.ends
+
+* INVERTER: input is A, output is Z
+.subckt inv a z
+MPD1 z a 0 0 NENH sw=16 sl=1
+MPU1 z a vdd vdd PENH sw=16 sl=1
+.ends
+*/
+
+
+
+/*
+.subckt ADDER4 a3 a2 a1 a0 b3 b2 b1 b0 s4 s3 s2 s1 s0
+* remember the node named "0" is the ground node
+* nodes c0 through c3 are internal to the ADDER module
+Xbit0 a0 b0 0 s0 c0 FA
+Xbit1 a1 b1 c0 s1 c1 FA
+Xbit2 a2 b2 c1 s2 c2 FA
+Xbit3 a3 b3 c2 s3 s4 FA
+.ends
+*/
+
+* FA: full adder module, input is C0, A, B, output is S and C1
+.subckt FA a b ci s co
+Xxor1 a b i1 xor2
+Xxor2 ci i1 s xor2
+Xand1 a b i2 and2
+Xand2 i1 ci i3 and2
+Xor1 i2 i3 co or2
+.ends
+
+.subckt adder32 ALUFN[0] A[31:0] B[31:0] s[31:0] z v n
+X1 B[31:0] ALUFN0#32 xor_out[31:0] xor2
+X2 xor_out[0] A[0] ALUFN0 s0 c0 FA
+X3 xor_out[30:1] A[30:1] c[29:0] s[30:1] c[30:1] FA
+X4 xor_out[31] A[31] c[30] n s[32] FA
+.connect n s[31]
+X5 s[0] s[1] s[2] s[3] z0 or4
+X6 s[4] s[5] s[6] s[7] z1 or4
+X7 s[8] s[9] s[10] s[11] z2 or4
+X8 s[12] s[13] s[14] s[15] z3 or4
+X9 s[16] s[17] s[18] s[19] z4 or4
+X10 s[20] s[21] s[22] s[23] z5 or4
+X11 s[24] s[25] s[26] s[27] z6 or4
+X12 s[28] s[29] s[30] s[31] z7 or4
+X13 z0 z1 z2 z3 z_out_1 or4
+X14 z4 z5 z6 z7 z_out_2 or4
+X15 z_out_1 z_out_2 z nor2
+X16 s[31] s31o inverter
+X17 xor_out[31] b31o inverter
+X18 A[31] a31o inverter
+X19 A[31] xor_out[31] s31o out_1 and3
+X20 a31o b31o s[31] out_2 and3
+X21 out_1 out_2 v or2
+.ends
+
+.subckt boole32 ALUFN[3:0] A[31:0] B[31:0] boole[31:0]
+Xmux0 A0 B0 ALUFN0 ALUFN1 ALUFN2 ALUFN3 boole[0] mux4  
+Xmux1 A[31:1] B[31:1] ALUFN0#31 ALUFN1#31 ALUFN2#31 ALUFN3#31 boole[31:1] mux4 
+.ends
+
+.subckt shift32 ALUFN[1:0] A[31:0] B[4:0] shift[31:0]
+Xmux0 B[0]#32  Zshl[31:0] Zshl[30:0] 0 SHL[31:0] mux2
+Xmux1 B[1]#32  Yshl[31:0] Yshl[29:0] 0#2 Zshl[31:0] mux2
+Xmux2 B[2]#32  Xshl[31:0] Xshl[27:0] 0#4 Yshl[31:0] mux2
+Xmux3 B[3]#32  Wshl[31:0] Wshl[23:0] 0#8 Xshl[31:0] mux2
+Xmux4 B[4]#32  A[31:0] A[15:0] 0#16 Wshl[31:0] mux2
+
+Xmuxsr0 B[0]#32  Zshr[31:0] 0 Zshr[31:1] SHR[31:0] mux2
+Xmuxsr1 B[1]#32  Yshr[31:0] 0#2 Yshr[31:2] Zshr[31:0] mux2
+Xmuxsr2 B[2]#32  Xshr[31:0] 0#4 Xshr[31:4] Yshr[31:0] mux2
+Xmuxsr3 B[3]#32  Wshr[31:0] 0#8 Wshr[31:8] Xshr[31:0] mux2
+Xmuxsr4 B[4]#32  A[31:0] 0#16 A[31:16] Wshr[31:0] mux2
+
+Xmuxsra0 B[0]#32  Z[31:0]  A[31] Z[31:1] SRA[31:0] mux2
+Xmuxsra1 B[1]#32  Y[31:0] A[31]#2 Y[31:2] Z[31:0] mux2
+Xmuxsra2 B[2]#32  X[31:0] A[31]#4 X[31:4] Y[31:0] mux2
+Xmuxsra3 B[3]#32  W[31:0] A[31]#8 W[31:8] X[31:0] mux2
+Xmuxsra4 B[4]#32  A[31:0] A[31]#16 A[31:16] W[31:0] mux2
+		
+XmuxX ALUFN[0]#32 ALUFN[1]#32 SHL[31:0] SHR[31:0] 0#32 SRA[31:0] shift[31:0] mux4 
+.ends
+
+.subckt compare32 ALUFN[2:1] z v n cmp[31:0]
+.connect cmp[31:1] 0 
+Xxornv v n out_vn xor2
+Xxorz out_vn z out_or or2
+Xmux0 ALUFN2 ALUFN1 0 out_vn z out_or cmp0 mux4 
+.ends
+
+.subckt alu ALUFN[5:0] A[31:0] B[31:0] alu[31:0] z v n
+xadd1 ALUFN[0] A[31:0] B[31:0] add[31:0] z v n adder32 
+xadd2 ALUFN[3:0] A[31:0] B[31:0] bool[31:0] boole32 
+xadd3 ALUFN[1:0] A[31:0] B[4:0] shift[31:0] shift32 
+xadd4 ALUFN[2:1] z v n cmp[31:0] compare32 
+XmuxX ALUFN[5]#32 ALUFN[4]#32 add[31:0] shift[31:0] bool[31:0] cmp[31:0] alu[31:0] mux4 
+.ends
+
+
+

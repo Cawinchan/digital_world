@@ -1,0 +1,99 @@
+.include "C:/Users/cawin/Downloads/50002/nominal.jsim"
+.include "C:/Users/cawin/Downloads/50002/lab3compare.jsim"
+.include "C:/Users/cawin/Downloads/50002/stdcell.jsim"
+
+/*
+* 2-input NAND: inputs are A and B, output is Z
+*NAND GATE
+.subckt nand2 a b z
+MPD1 z a 1 0 NENH sw=8 sl=1
+MPD2 1 b 0 0 NENH sw=8 sl=1
+MPU1 z a vdd vdd PENH sw=10 sl=1
+MPU2 z b vdd vdd PENH sw=10 sl=1
+.ends
+
+*AND GATE
+.subckt AND a b z
+Xnand0 a b c nand2
+Xinv0 c z inv
+.ends
+
+.subckt XOR a b z
+MPD1 z a il 0 NENH sw=8 sl=1
+XinvB b inv_b inv 
+MPD2 z inv_b il 0 NENH sw=8 sl=1
+MPD3 il b 0 0 NENH sw=8 sl=1
+XinvA a inv_a inv
+MPD4 il inv_a 0 0 NENH sw=8 sl=1
+MPU1 j1 a vdd vdd PENH sw=10 sl=1
+MPU2 z inv_b j1 vdd PENH sw=10 sl=1
+MPU3 k1 inv_a vdd vdd PENH sw=10 sl=1
+MPU4 z b k1 vdd PENH sw=10 sl=1
+.ends
+
+* OR: input is A and B, output is F
+.subckt OR a b z
+Xnor0 a b c nor
+Xinv0 c z inv 
+.ends
+
+* NOR: input is A and B, output is F
+.subckt nor a b z
+MPU1 vdd a 1 vdd PENH sw=10 sl=1
+MPU2 1 b z vdd PENH sw=10 sl=1
+MPD1 0 b z 0 NENH sw=8 sl=1
+MPD2 0 a z 0 NENH sw=8 sl=1
+.ends
+
+* INVERTER: input is A, output is Z
+.subckt inv a z
+MPD1 z a 0 0 NENH sw=16 sl=1
+MPU1 z a vdd vdd PENH sw=16 sl=1
+.ends
+
+* FA: full adder module, input is C0, A, B, output is S and C1
+.subckt FA a b ci s co
+Xxor1 a b i1 XOR
+Xxor2 ci i1 s XOR
+Xand1 a b i2 AND
+Xand2 i1 ci i3 AND
+Xor1 i2 i3 co OR
+.ends
+
+
+.subckt ADDER4 a3 a2 a1 a0 b3 b2 b1 b0 s4 s3 s2 s1 s0
+* remember the node named "0" is the ground node
+* nodes c0 through c3 are internal to the ADDER module
+Xbit0 a0 b0 0 s0 c0 FA
+Xbit1 a1 b1 c0 s1 c1 FA
+Xbit2 a2 b2 c1 s2 c2 FA
+Xbit3 a3 b3 c2 s3 s4 FA
+.ends
+
+
+.subckt adder32 ALUFN[0] A[31:0] B[31:0] s[31:0] z v n
+Xbusctl B[31:0] ALUFN0#32 xor_out[31:0] xor2
+Xbusct2 xor_out[0] A[0] ALUFN[0] s0 c0 FA
+Xbusct3 xor_out[30:1] A[30:1] c[29:1] s[30:0] c[30:1] FA
+Xbusct4 xor_out[31] A[31] c[30] s[31] s[32] FA
+.ends
+
+
+
+.subckt boole32 ALUFN[3:0] A[31:0] B[31:0] boole[31:0]
+Xmux0 A0 B0 ALUFN0 ALUFN1 ALUFN2 ALUFN3 boole[0] mux4  
+Xmux1 A[31:1] B[31:1] ALUFN0#31 ALUFN1#31 ALUFN2#31 ALUFN3#31 boole[31:1] mux4 
+.ends
+*/
+
+.subckt compare32 ALUFN[2:1] z v n cmp[31:0]
+.connect cmp[31:1] 0 
+Xxornv v n out_vn xor2
+Xxorz out_vn z out_or or2
+Xmux0 ALUFN2 ALUFN1 0 out_vn z out_or cmp0 mux4 
+.ends
+
+
+
+
+
